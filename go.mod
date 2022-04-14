@@ -3,6 +3,7 @@ module sss
 go 1.14
 
 require (
+	github.com/PangZhiww/sss- v0.0.0-20220414165928-a5357b7a2a69 // indirect
 	github.com/astaxie/beego v1.12.3
 	github.com/garyburd/redigo v1.6.3
 	github.com/go-sql-driver/mysql v1.6.0
