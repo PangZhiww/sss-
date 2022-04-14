@@ -3,7 +3,6 @@ package handler
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/orm"
 	models "sss/IhomeWeb/model"
@@ -52,7 +51,6 @@ func (e *GetArea) GetArea(ctx context.Context, req *GetAreA.Request, rsp *GetAre
 	bm, err := cache.NewCache("redis", string(redis_conf_json))
 	if err != nil {
 		beego.Info("redis连接失败", err)
-		fmt.Println("Hello world")
 		// 初始化 错误码
 		rsp.Error = utils.RECODE_DBERR
 		// 错误信息
