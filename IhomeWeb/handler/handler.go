@@ -6,7 +6,7 @@ import (
 	"github.com/astaxie/beego"
 	"github.com/julienschmidt/httprouter"
 	models "sss/IhomeWeb/model"
-
+	"sss/IhomeWeb/utils"
 	//"github.com/julienschmidt/httprouter"
 	"github.com/micro/go-micro/service/grpc"
 	"net/http"
@@ -50,6 +50,7 @@ func IhomeWebCall(w http.ResponseWriter, r *http.Request,_ httprouter.Params) {
 
 */
 
+// GetArea 获取地区信息
 func GetArea(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	beego.Info("请求地区信息 GetArea api/v1.0/areas")
 
@@ -81,6 +82,46 @@ func GetArea(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		"errno":  rsp.Error,
 		"errmsg": rsp.Errmsg,
 		"data":   area_list,
+	}
+
+	// 回传数据的时候是直接发送过去的 并没有设置数据格式 所以需要设置
+	w.Header().Set("Content-Type", "application/json")
+
+	// encode and write the response as json
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+}
+
+// GetSession 获取session信息
+func GetSession(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	beego.Info("获取session信息 GetSession api/v1.0/session")
+
+	// we want to augment the response
+	response := map[string]interface{}{
+		"errno":  utils.RECODE_SESSIONERR,
+		"errmsg": utils.RecodeText(utils.RECODE_SESSIONERR),
+	}
+
+	// 回传数据的时候是直接发送过去的 并没有设置数据格式 所以需要设置
+	w.Header().Set("Content-Type", "application/json")
+
+	// encode and write the response as json
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+}
+
+// GetIndex 获取首页轮播图信息
+func GetIndex(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	beego.Info("获取首页轮播图信息 GetIndex api/v1.0/house/index")
+
+	// we want to augment the response
+	response := map[string]interface{}{
+		"errno":  utils.RECODE_OK,
+		"errmsg": utils.RecodeText(utils.RECODE_OK),
 	}
 
 	// 回传数据的时候是直接发送过去的 并没有设置数据格式 所以需要设置

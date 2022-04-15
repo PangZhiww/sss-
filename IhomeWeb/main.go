@@ -14,7 +14,7 @@ func main() {
 	service := web.NewService(
 		web.Name("go.micro.web.IhomeWeb"),
 		web.Version("latest"),
-		web.Address(":8080"),
+		web.Address(":8081"),
 	)
 
 	// initialise service
@@ -27,8 +27,11 @@ func main() {
 	rou.NotFound = http.FileServer(http.Dir("html"))
 
 	// 获取地区请求
-	rou.GET("/api/v1.0/areas",handler.GetArea)
-
+	rou.GET("/api/v1.0/areas", handler.GetArea)
+	// 获取session
+	rou.GET("/api/v1.0/session", handler.GetSession)
+	// 获取首页轮播图
+	rou.GET("/api/v1.0/house/index", handler.GetIndex)
 
 	// register html handler
 	//service.Handle("/", http.FileServer(http.Dir("html")))
