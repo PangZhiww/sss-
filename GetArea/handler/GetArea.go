@@ -3,10 +3,12 @@ package handler
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/orm"
 	models "sss/IhomeWeb/model"
 	"sss/IhomeWeb/utils"
+	"time"
 
 	"github.com/micro/go-micro/util/log"
 
@@ -45,10 +47,10 @@ func (e *GetArea) GetArea(ctx context.Context, req *GetAreA.Request, rsp *GetAre
 
 	// 将map进行转化成为json
 
-	redis_conf_json, _ := json.Marshal(redis_conf)
+	redisConfJson, _ := json.Marshal(redis_conf)
 
 	// 创建redis句柄
-	bm, err := cache.NewCache("redis", string(redis_conf_json))
+	bm, err := cache.NewCache("redis", string(redisConfJson))
 	if err != nil {
 		beego.Info("redis连接失败", err)
 		// 初始化 错误码
@@ -64,6 +66,28 @@ func (e *GetArea) GetArea(ctx context.Context, req *GetAreA.Request, rsp *GetAre
 	if area_value != nil {
 		/*如果有数据就发送给前端*/
 		beego.Info("获取的到地域信息缓存")
+
+		areaMap := []map[string]interface{}{} // interface 任意类型
+		// func Unmarshal(data []byte, v interface{}) error
+		errJson := json.Unmarshal(area_value.([]byte), &areaMap)
+		fmt.Println("err_json:", errJson)
+		//beego.Info("得到从缓存中提取的area数据", areaMap)
+
+		for _, value := range areaMap {
+			/*
+				beego.Info(key, value)
+					fmt.Println("mapKey:", key)
+					fmt.Println("mapValue:", value)
+			*/
+			tmp := GetAreA.Response_Areas{
+				Aid:   int32(value["aid"].(float64)),
+				Aname: value["aname"].(string),
+			}
+			rsp.Data = append(rsp.Data, &tmp)
+		}
+
+		return nil
+
 	}
 
 	/*2.没有数据就从数据库（mysql）中查找数据*/
@@ -89,10 +113,21 @@ func (e *GetArea) GetArea(ctx context.Context, req *GetAreA.Request, rsp *GetAre
 	}
 
 	/*3.将查找到的数据存到缓存中*/
+	// 需要将获取到的数据转化为json
+	area_json, _ := json.Marshal(area)
+	// 操作redis将数据存入
+	// Put(key string, val interface{}, timeout time.Duration) error
+	err = bm.Put("area_info", area_json, time.Second*3600)
+	if err != nil {
+		fmt.Println("数据缓存失败：", err)
+		rsp.Error = utils.RECODE_DBERR
+		rsp.Errmsg = utils.RecodeText(rsp.Error)
+	}
+
 	/*4.将查找到的数据发送给前端*/
 	// 将查询到的数据按照proto的格式送给web服务
-	for key, value := range area {
-		beego.Info(key, value)
+	for _, value := range area {
+		//beego.Info(key, value)
 		tmp := GetAreA.Response_Areas{
 			Aid:   int32(value.Id),
 			Aname: value.Name,
