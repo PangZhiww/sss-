@@ -32,6 +32,8 @@ func main() {
 	rou.GET("/api/v1.0/session", handler.GetSession)
 	// 获取首页轮播图
 	rou.GET("/api/v1.0/house/index", handler.GetIndex)
+	// 获取验证码图片
+	rou.GET("/api/v1.0/imagecode/:uuid", handler.GetImageCd)
 
 	// register html handler
 	//service.Handle("/", http.FileServer(http.Dir("html")))
