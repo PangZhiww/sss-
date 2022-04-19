@@ -3,8 +3,12 @@ package handler
 import (
 	"context"
 	"encoding/json"
+	"fmt"
+	"github.com/afocus/captcha"
 	"github.com/astaxie/beego"
 	"github.com/julienschmidt/httprouter"
+	"image"
+	"image/png"
 	models "sss/IhomeWeb/model"
 	"sss/IhomeWeb/utils"
 	//"github.com/julienschmidt/httprouter"
@@ -13,6 +17,8 @@ import (
 	// 调用area的proto
 	GETAREA "sss/GetArea/proto/GetArea"
 	//IhomeWeb "path/to/service/proto/IhomeWeb"
+
+	GetImageCD "sss/GetImageCd/proto/GetImageCd"
 )
 
 /*
@@ -92,6 +98,46 @@ func GetArea(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		http.Error(w, err.Error(), 500)
 		return
 	}
+}
+
+// GetImageCd 获取验证码图片
+func GetImageCd(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	fmt.Println("获取验证码图片 GetImageCd api/v1.0/imagecode/:uuid")
+
+	// 创建服务
+	server := grpc.NewService()
+	server.Init()
+
+	// 调用服务
+	GetImageCdClient := GetImageCD.NewGetImageCdService("go.micro.srv.GetImageCd", server.Client())
+
+	// 获取uuid
+	uuid := ps.ByName("uuid")
+
+	rsp, err := GetImageCdClient.GetImageCd(context.TODO(), &GetImageCD.Request{
+		Uuid: uuid,
+	})
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+
+	// 接收图片信息的 图片格式
+	var img image.RGBA
+
+	img.Stride = int(rsp.Stride)
+	img.Pix = []uint8(rsp.Pix)
+	img.Rect.Min.X = int(rsp.Min.X)
+	img.Rect.Min.Y = int(rsp.Min.Y)
+	img.Rect.Max.X = int(rsp.Max.X)
+	img.Rect.Max.Y = int(rsp.Max.Y)
+
+	var image captcha.Image
+	image.RGBA = &img
+
+	// 将图片发送给浏览器
+	png.Encode(w, image)
+
 }
 
 // GetSession 获取session信息
