@@ -10,8 +10,8 @@ import (
 
 type GetSmscd struct{}
 
-// Call is a single request handler called via client.Call or the generated client code
-func (e *GetSmscd) Call(ctx context.Context, req *GetSmsCD.Request, rsp *GetSmsCD.Response) error {
+// GetSmscd is a single request handler called via client.Call or the generated client code
+func (e *GetSmscd) GetSmscd(ctx context.Context, req *GetSmsCD.Request, rsp *GetSmsCD.Response) error {
 	log.Log("Received GetSmscd.Call request")
 	rsp.Msg = "Hello " + req.Name
 	return nil
