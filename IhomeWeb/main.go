@@ -35,7 +35,7 @@ func main() {
 	// 获取验证码图片
 	rou.GET("/api/v1.0/imagecode/:uuid", handler.GetImageCd)
 
-	// register html handler
+	// register html handler 映射前端页面
 	//service.Handle("/", http.FileServer(http.Dir("html")))
 	service.Handle("/", rou)
 
