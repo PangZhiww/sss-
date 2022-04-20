@@ -47,16 +47,16 @@ func (e *GetImageCd) GetImageCd(ctx context.Context, req *GetImageCD.Request, rs
 	fmt.Println("验证码:", str)
 
 	// 将uuid和随即验证码进行缓存 配置缓存参数
-	redis_conf := map[string]string{
+	redisConf := map[string]string{
 		"key":   utils.G_server_name,
 		"conn":  utils.G_redis_addr + ":" + utils.G_redis_port, // 127.0.0.1:6379
 		"dbNum": utils.G_redis_dbnum,
 	}
-	fmt.Println("redis_conf: ", redis_conf)
+	fmt.Println("redis_conf: ", redisConf)
 
 	// 将map进行转化成为json
 
-	redisConfJson, _ := json.Marshal(redis_conf)
+	redisConfJson, _ := json.Marshal(redisConf)
 
 	// 创建redis句柄
 	bm, err := cache.NewCache("redis", string(redisConfJson))
