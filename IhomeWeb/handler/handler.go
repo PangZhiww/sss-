@@ -7,16 +7,15 @@ import (
 	"github.com/afocus/captcha"
 	"github.com/astaxie/beego"
 	"github.com/julienschmidt/httprouter"
+	"github.com/micro/go-micro/service/grpc"
 	"image"
 	"image/png"
+	"net/http"
+	GetSmsCD "sss/GetSmscd/proto/GetSmscd"
 	models "sss/IhomeWeb/model"
 	"sss/IhomeWeb/utils"
-	//"github.com/julienschmidt/httprouter"
-	"github.com/micro/go-micro/service/grpc"
-	"net/http"
 	// 调用area的proto
 	GETAREA "sss/GetArea/proto/GetArea"
-	//IhomeWeb "path/to/service/proto/IhomeWeb"
 
 	GetImageCD "sss/GetImageCd/proto/GetImageCd"
 )
@@ -137,6 +136,50 @@ func GetImageCd(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
 	// 将图片发送给浏览器
 	png.Encode(w, image)
+
+}
+
+// GetSmscd 获取短信验证码
+func GetSmscd(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+
+	fmt.Println(" GetSmscd 获取短信验证码 /api/v1.0/smscode/:mobile ")
+	// 通过传入参数URL 下 Query 获取前端在 url 里的参数
+	//fmt.Println(r.URL.Query()) // map[id:[e242f5ef-5145-49a1-a77c-de29c973d250] text:[22222]]
+	// 获取参数
+	text := r.URL.Query()["text"][0]
+	id := r.URL.Query()["id"][0]
+	mobile := ps.ByName("mobile")
+
+	// 创建并初始化服务
+	server := grpc.NewService()
+	server.Init()
+
+	// call the backend service 调用服务
+	GetSmscdClient := GetSmsCD.NewGetSmscdService("go.micro.srv.GetSmscd", server.Client())
+	rsp, err := GetSmscdClient.GetSmscd(context.TODO(), &GetSmsCD.Request{
+		Mpbile:   mobile,
+		Imagestr: text,
+		Uuid:     id,
+	})
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+
+	// we want to augment the response 创建返回数据的map
+	response := map[string]interface{}{
+		"error":  rsp.Error,
+		"errmsg": rsp.Errmsg,
+	}
+
+	// 设置返回数据的格式
+	w.Header().Set("Content-Type", "application/json")
+
+	// encode and write the response as json 发送数据
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
 
 }
 
