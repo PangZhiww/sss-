@@ -3,7 +3,7 @@ syntax = "proto3";
 package go.micro.srv.GetSmscd;
 
 service GetSmscd {
-	rpc Call(Request) returns (Response) {}
+	rpc GetSmscd(Request) returns (Response) {}
 	rpc Stream(StreamingRequest) returns (stream StreamingResponse) {}
 	rpc PingPong(stream Ping) returns (stream Pong) {}
 }

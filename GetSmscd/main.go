@@ -6,7 +6,7 @@ import (
 	"sss/GetSmscd/handler"
 	"sss/GetSmscd/subscriber"
 
-	GetSmscd "sss/GetSmscd/proto/GetSmscd"
+	GetSmsCD "sss/GetSmscd/proto/GetSmscd"
 )
 
 func main() {
@@ -20,7 +20,7 @@ func main() {
 	service.Init()
 
 	// Register Handler
-	GetSmscd.RegisterGetSmscdHandler(service.Server(), new(handler.GetSmscd))
+	GetSmsCD.RegisterGetSmscdHandler(service.Server(), new(handler.GetSmscd))
 
 	// Register Struct as Subscriber
 	micro.RegisterSubscriber("go.micro.srv.GetSmscd", service.Server(), new(subscriber.GetSmscd))
