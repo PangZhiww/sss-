@@ -76,18 +76,18 @@ func GetArea(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 
 	// 接受数据
 	// 准备接收切片
-	area_list := []models.Area{}
+	areaList := []models.Area{}
 	// 循环接收数据
 	for _, value := range rsp.Data {
 		tmp := models.Area{Id: int(value.Aid), Name: value.Aname}
-		area_list = append(area_list, tmp)
+		areaList = append(areaList, tmp)
 	}
 
 	// we want to augment the response 返回给前端的map
 	response := map[string]interface{}{
 		"errno":  rsp.Error,
 		"errmsg": rsp.Errmsg,
-		"data":   area_list,
+		"data":   areaList,
 	}
 
 	// 回传数据的时候是直接发送过去的 并没有设置数据格式 所以需要设置
