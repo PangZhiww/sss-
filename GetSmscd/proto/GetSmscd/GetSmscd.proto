@@ -16,7 +16,7 @@ message Message {
 
 message Request {
     // 手机号
-    string mpbile = 1;
+    string Mobile = 1;
     // 图片验证码
     string imagestr = 2;
     // uuid
