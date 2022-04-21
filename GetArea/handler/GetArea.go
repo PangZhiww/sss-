@@ -37,7 +37,6 @@ func (e *GetArea) GetArea(ctx context.Context, req *GetAreA.Request, rsp *GetAre
 
 	/*1.从缓存中获取数据*/
 	// 准备连接redis信息 {"key":"collectionName","conn":":6039","dbNum":"0","password":"thePassWord"}
-
 	redisConf := map[string]string{
 		"key":   utils.G_server_name,
 		"conn":  utils.G_redis_addr + ":" + utils.G_redis_port, // 127.0.0.1:6379

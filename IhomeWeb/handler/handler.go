@@ -181,7 +181,7 @@ func GetSmscd(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	// call the backend service 调用服务
 	GetSmscdClient := GetSmsCD.NewGetSmscdService("go.micro.srv.GetSmscd", server.Client())
 	rsp, err := GetSmscdClient.GetSmscd(context.TODO(), &GetSmsCD.Request{
-		Mpbile:   mobile,
+		Mobile:   mobile,
 		Imagestr: text,
 		Uuid:     id,
 	})
