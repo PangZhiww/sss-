@@ -21,6 +21,7 @@ const (
 	RECODE_IOERR         = "4302"
 	RECODE_SERVERERR     = "4500"
 	RECODE_UNKNOWERR     = "4501"
+	RECODE_IMAGEERR      = "4601"
 )
 
 var recodeText = map[string]string{
@@ -44,6 +45,7 @@ var recodeText = map[string]string{
 	RECODE_SMSERR:        "短信失败",
 	RECODE_MOBILEERR:     "手机号匹配规则异常",
 	RECODE_MOBILEUSERERR: "该手机号已注册",
+	RECODE_IMAGEERR:      "图片验证码错误",
 }
 
 func RecodeText(code string) string {

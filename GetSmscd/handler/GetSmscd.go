@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/orm"
-	"reflect"
+	"github.com/garyburd/redigo/redis"
+	"math/rand"
 	models "sss/IhomeWeb/model"
 	"sss/IhomeWeb/utils"
+	"time"
 
 	"github.com/micro/go-micro/util/log"
 
@@ -78,11 +80,30 @@ func (e *GetSmscd) GetSmscd(ctx context.Context, req *GetSmsCD.Request, rsp *Get
 		rsp.Errmsg = utils.RecodeText(rsp.Error)
 		return nil
 	}
-	fmt.Println("打印value格式:", reflect.TypeOf(value), value) // reflect.TypeOf(value) 会返还的那个前数据的变量类型
+	//fmt.Println("打印value格式:", reflect.TypeOf(value), value) // reflect.TypeOf(value) 会返还的那个前数据的变量类型
+
+	// 格式转换
+	valueStr, _ := redis.String(value, nil)
+	if valueStr != req.Imagestr {
+		fmt.Println("数据不匹配 图片验证码值错误")
+		rsp.Error = utils.RECODE_IMAGEERR
+		rsp.Errmsg = utils.RecodeText(rsp.Error)
+		return nil
+	}
 
 	/*调用 短信接口发送短信*/
-	/*将短信验证码存入缓存数据库*/
-
+	// 创建随机数
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+	size := r.Intn(9999) + 1001
+	fmt.Println("短信验证码：", size)
+	/*将短信验证码存入redis缓存数据库*/
+	err = bm.Put(req.Mobile, size, time.Second*300)
+	if err != nil {
+		beego.Info("redis创建失败", err)
+		rsp.Error = utils.RECODE_DBERR
+		rsp.Errmsg = utils.RecodeText(rsp.Error)
+		return nil
+	}
 	return nil
 }
 
