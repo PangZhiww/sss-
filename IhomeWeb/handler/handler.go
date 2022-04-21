@@ -11,6 +11,7 @@ import (
 	"image"
 	"image/png"
 	"net/http"
+	"regexp"
 	GetSmsCD "sss/GetSmscd/proto/GetSmscd"
 	models "sss/IhomeWeb/model"
 	"sss/IhomeWeb/utils"
@@ -149,6 +150,29 @@ func GetSmscd(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	text := r.URL.Query()["text"][0]
 	id := r.URL.Query()["id"][0]
 	mobile := ps.ByName("mobile")
+
+	// 通过正则进行手机号的判断
+	// 创建正则条件
+	mobileReg := regexp.MustCompile(`0?(13|14|15|18|17)[0-9]{9}`)
+	// 通过条件判断字符串是否匹配 返会true或false
+	bl := mobileReg.MatchString(mobile)
+	// 如果手机号不匹配那就不调用服务，直接返回错误
+	if bl == false {
+		// we want to augment the response 创建返回数据的map
+		response := map[string]interface{}{
+			"error":  utils.RECODE_MOBILEERR,
+			"errmsg": utils.RecodeText(utils.RECODE_MOBILEERR),
+		}
+
+		// 设置返回数据的格式
+		w.Header().Set("Content-Type", "application/json")
+
+		// encode and write the response as json 发送数据
+		if err := json.NewEncoder(w).Encode(response); err != nil {
+			http.Error(w, err.Error(), 500)
+			return
+		}
+	}
 
 	// 创建并初始化服务
 	server := grpc.NewService()
