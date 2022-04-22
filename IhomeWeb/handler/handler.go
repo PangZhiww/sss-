@@ -15,12 +15,14 @@ import (
 	GetSmsCD "sss/GetSmscd/proto/GetSmscd"
 	models "sss/IhomeWeb/model"
 	"sss/IhomeWeb/utils"
-	// 调用area的proto
+
 	GETAREA "sss/GetArea/proto/GetArea"
 
 	GetImageCD "sss/GetImageCd/proto/GetImageCd"
 
 	PostRET "sss/PostRet/proto/PostRet"
+
+	GetSESSION "sss/GetSession/proto/GetSession"
 )
 
 /*
@@ -289,10 +291,46 @@ func PostRet(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 func GetSession(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	beego.Info("获取session信息 GetSession api/v1.0/session")
 
+	cookie, err := r.Cookie("userlogin")
+	if err != nil {
+		// we want to augment the response 直接返回说明用户为登陆
+		response := map[string]interface{}{
+			"errno":  utils.RECODE_SESSIONERR,
+			"errmsg": utils.RecodeText(utils.RECODE_SESSIONERR),
+		}
+
+		// 回传数据的时候是直接发送过去的 并没有设置数据格式 所以需要设置   设置返回数据的格式
+		w.Header().Set("Content-Type", "application/json")
+
+		// encode and write the response as json 将数据回发给前端
+		if err := json.NewEncoder(w).Encode(response); err != nil {
+			http.Error(w, err.Error(), 500)
+			return
+		}
+	}
+
+	// 创建服务
+	server := grpc.NewService()
+	server.Init()
+
+	// call the backend service
+	GetSessionClient := GetSESSION.NewGetSessionService("go.micro.srv.GetSession", server.Client())
+	rsp, err := GetSessionClient.GetSession(context.TODO(), &GetSESSION.Request{
+		SessionId: cookie.Value,
+	})
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+
+	data := make(map[string]string)
+	data["name"] = rsp.UserName
+
 	// we want to augment the response
 	response := map[string]interface{}{
-		"errno":  utils.RECODE_SESSIONERR,
-		"errmsg": utils.RecodeText(utils.RECODE_SESSIONERR),
+		"errno":  rsp.Errno,
+		"errmsg": rsp.Errmsg,
+		"data":   data,
 	}
 
 	// 回传数据的时候是直接发送过去的 并没有设置数据格式 所以需要设置

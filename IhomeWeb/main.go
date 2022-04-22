@@ -28,8 +28,6 @@ func main() {
 
 	// 获取地区请求
 	rou.GET("/api/v1.0/areas", handler.GetArea)
-	// 获取session
-	rou.GET("/api/v1.0/session", handler.GetSession)
 	// 获取首页轮播图
 	rou.GET("/api/v1.0/house/index", handler.GetIndex)
 	// 获取验证码图片
@@ -38,6 +36,8 @@ func main() {
 	rou.GET("/api/v1.0/smscode/:mobile", handler.GetSmscd)
 	// 获取短信验证码
 	rou.POST("/api/v1.0/users", handler.PostRet)
+	// 获取session
+	rou.GET("/api/v1.0/session", handler.GetSession)
 
 	// register html handler 映射前端页面
 	//service.Handle("/", http.FileServer(http.Dir("html")))
