@@ -19,6 +19,8 @@ import (
 	GETAREA "sss/GetArea/proto/GetArea"
 
 	GetImageCD "sss/GetImageCd/proto/GetImageCd"
+
+	PostRET "sss/PostRet/proto/PostRet"
 )
 
 /*
@@ -45,7 +47,8 @@ func IhomeWebCall(w http.ResponseWriter, r *http.Request,_ httprouter.Params) {
 		"msg": rsp.Msg,
 		"ref": time.Now().UnixNano(),
 	}
-
+	// 设置返回数据的格式
+	w.Header().Set("Content-Type", "application/json")
 	// encode and write the response as json
 	if err := json.NewEncoder(w).Encode(response); err != nil {
 		http.Error(w, err.Error(), 500)
@@ -200,6 +203,81 @@ func GetSmscd(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	w.Header().Set("Content-Type", "application/json")
 
 	// encode and write the response as json 发送数据
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+
+}
+
+// PostRet 注册请求
+func PostRet(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+
+	fmt.Println("PostRet 注册请求 api/v1.0/users")
+
+	// 服务创建
+	server := grpc.NewService()
+	server.Init()
+
+	// decode the incoming request as json 接收post发送过来的数据
+	var request map[string]interface{}
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+
+	/*
+		for s, i := range request {
+			fmt.Println("PostRet session request",s, i)
+		}
+	*/
+
+	if request["mobile"].(string) == "" || request["password"].(string) == "" || request["sms_code"].(string) == "" {
+		// we want to augment the response 准备回传数据
+		response := map[string]interface{}{
+			"errno":  utils.RECODE_DATAERR,
+			"errmsg": utils.RecodeText(utils.RECODE_DATAERR),
+		}
+		// 设置返回数据的格式
+		w.Header().Set("Content-Type", "application/json")
+		// encode and write the response as json 发送给前端
+		if err := json.NewEncoder(w).Encode(response); err != nil {
+			http.Error(w, err.Error(), 500)
+			return
+		}
+		return
+	}
+
+	// call the backend service 调用请求
+	PostRETClient := PostRET.NewPostRetService("go.micro.srv.PostRet", server.Client())
+	rsp, err := PostRETClient.PostRet(context.TODO(), &PostRET.Request{
+		Mobile:   request["mobile"].(string),
+		Password: request["password"].(string),
+		SmsCode:  request["sms_code"].(string),
+	})
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+
+	// 读取cookie 统一cookie userlogin
+	// func (r *Request) Cookie(name string) (*Cookie, error) {
+	cookie, err := r.Cookie("userlogin")
+	if err != nil || "" == cookie.Value {
+		// 创建一个cookie对象
+		cookie := http.Cookie{Name: "userlogin", Value: rsp.SessionId, Path: "/", MaxAge: 3600}
+		// 对浏览器的cookie进行设置
+		http.SetCookie(w, &cookie)
+	}
+
+	// we want to augment the response 准备回传数据
+	response := map[string]interface{}{
+		"errno":  rsp.Errno,
+		"errmsg": rsp.Errmsg,
+	}
+	// 设置返回数据的格式
+	w.Header().Set("Content-Type", "application/json")
+	// encode and write the response as json 发送给前端
 	if err := json.NewEncoder(w).Encode(response); err != nil {
 		http.Error(w, err.Error(), 500)
 		return
