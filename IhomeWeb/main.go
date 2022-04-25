@@ -14,7 +14,7 @@ func main() {
 	service := web.NewService(
 		web.Name("go.micro.web.IhomeWeb"),
 		web.Version("latest"),
-		web.Address(":8081"),
+		web.Address(":8080"),
 	)
 
 	// initialise service
@@ -38,6 +38,8 @@ func main() {
 	rou.POST("/api/v1.0/users", handler.PostRet)
 	// 获取session
 	rou.GET("/api/v1.0/session", handler.GetSession)
+	// 登陆
+	rou.POST("/api/v1.0/sessions", handler.PostLogin)
 
 	// register html handler 映射前端页面
 	//service.Handle("/", http.FileServer(http.Dir("html")))
