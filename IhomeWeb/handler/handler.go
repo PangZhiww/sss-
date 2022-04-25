@@ -232,6 +232,7 @@ func PostRet(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		for s, i := range request {
 			fmt.Println("PostRet session request",s, i)
 		}
+
 	*/
 
 	if request["mobile"].(string) == "" || request["password"].(string) == "" || request["sms_code"].(string) == "" {
@@ -424,7 +425,7 @@ func DeleteSession(w http.ResponseWriter, r *http.Request, _ httprouter.Params) 
 
 	// call the backend service
 	DeleteSessionClient := DELETESession.NewDeleteSessionService("go.micro.srv.DeleteSession", server.Client())
-
+	fmt.Println("11111")
 	// 获取cookie
 	cookie, err := r.Cookie("userlogin")
 	if err != nil || cookie.Value == "" {
@@ -442,22 +443,25 @@ func DeleteSession(w http.ResponseWriter, r *http.Request, _ httprouter.Params) 
 		}
 		return
 	}
+	fmt.Println(cookie)
+	fmt.Println("2222")
 
 	rsp, err := DeleteSessionClient.DeleteSession(context.TODO(), &DELETESession.Request{
 		SessionId: cookie.Value,
 	})
 	if err != nil {
+		fmt.Println(err)
 		http.Error(w, err.Error(), 500)
 		return
 	}
-
+	fmt.Println("3333")
 	// 删除sessionId
 	cookie, err = r.Cookie("userlogin")
 	if cookie.Value != "" || err == nil {
 		cookie := http.Cookie{Name: "userlogin", Path: "/", MaxAge: -1, Value: ""}
 		http.SetCookie(w, &cookie)
 	}
-
+	fmt.Println("4444")
 	// we want to augment the response
 	response := map[string]interface{}{
 		"errno":  rsp.Errno,

@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+
 	"encoding/json"
 	"fmt"
 	"github.com/astaxie/beego"
@@ -48,7 +49,6 @@ func (e *DeleteSession) DeleteSession(ctx context.Context, req *DELETESession.Re
 		// 错误信息
 		rsp.Errmsg = utils.RecodeText(rsp.Errno)
 	}
-
 	// 获取sessionId
 	sessionId := req.SessionId
 
@@ -64,4 +64,5 @@ func (e *DeleteSession) DeleteSession(ctx context.Context, req *DELETESession.Re
 	bm.Delete(sessionmobile)
 
 	return nil
+
 }
