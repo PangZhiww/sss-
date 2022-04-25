@@ -13,16 +13,16 @@ import (
 	"net/http"
 	"regexp"
 	GETAREA "sss/GetArea/proto/GetArea"
+	GetImageCD "sss/GetImageCd/proto/GetImageCd"
 	GetSmsCD "sss/GetSmscd/proto/GetSmscd"
 	models "sss/IhomeWeb/model"
 	"sss/IhomeWeb/utils"
-
-	GetImageCD "sss/GetImageCd/proto/GetImageCd"
 
 	PostRET "sss/PostRet/proto/PostRet"
 
 	GetSESSION "sss/GetSession/proto/GetSession"
 
+	DELETESession "sss/DeleteSession/proto/DeleteSession"
 	POSTLogin "sss/PostLogin/proto/PostLogin"
 )
 
@@ -58,7 +58,6 @@ func IhomeWebCall(w http.ResponseWriter, r *http.Request,_ httprouter.Params) {
 		return
 	}
 }
-
 
 */
 
@@ -412,6 +411,66 @@ func PostLogin(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		http.Error(w, err.Error(), 500)
 		return
 	}
+}
+
+// DeleteSession 退出登陆
+func DeleteSession(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+
+	fmt.Println(" DeleteSession 退出登陆 /api/v1.0/session ")
+
+	// 创建服务
+	server := grpc.NewService()
+	server.Init()
+
+	// call the backend service
+	DeleteSessionClient := DELETESession.NewDeleteSessionService("go.micro.srv.DeleteSession", server.Client())
+
+	// 获取cookie
+	cookie, err := r.Cookie("userlogin")
+	if err != nil || cookie.Value == "" {
+		// we want to augment the response 准备回传数据
+		response := map[string]interface{}{
+			"errno":  utils.RECODE_DATAERR,
+			"errmsg": utils.RecodeText(utils.RECODE_DATAERR),
+		}
+		// 设置返回数据的格式
+		w.Header().Set("Content-Type", "application/json")
+		// encode and write the response as json 发送给前端
+		if err := json.NewEncoder(w).Encode(response); err != nil {
+			http.Error(w, err.Error(), 500)
+			return
+		}
+		return
+	}
+
+	rsp, err := DeleteSessionClient.DeleteSession(context.TODO(), &DELETESession.Request{
+		SessionId: cookie.Value,
+	})
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+
+	// 删除sessionId
+	cookie, err = r.Cookie("userlogin")
+	if cookie.Value != "" || err == nil {
+		cookie := http.Cookie{Name: "userlogin", Path: "/", MaxAge: -1, Value: ""}
+		http.SetCookie(w, &cookie)
+	}
+
+	// we want to augment the response
+	response := map[string]interface{}{
+		"errno":  rsp.Errno,
+		"errmsg": rsp.Errmsg,
+	}
+	// 设置返回数据的格式
+	w.Header().Set("Content-Type", "application/json")
+	// encode and write the response as json
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+
 }
 
 // GetIndex 获取首页轮播图信息
