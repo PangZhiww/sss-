@@ -12,17 +12,18 @@ import (
 	"image/png"
 	"net/http"
 	"regexp"
+	GETAREA "sss/GetArea/proto/GetArea"
 	GetSmsCD "sss/GetSmscd/proto/GetSmscd"
 	models "sss/IhomeWeb/model"
 	"sss/IhomeWeb/utils"
-
-	GETAREA "sss/GetArea/proto/GetArea"
 
 	GetImageCD "sss/GetImageCd/proto/GetImageCd"
 
 	PostRET "sss/PostRet/proto/PostRet"
 
 	GetSESSION "sss/GetSession/proto/GetSession"
+
+	POSTLogin "sss/PostLogin/proto/PostLogin"
 )
 
 /*
@@ -292,7 +293,7 @@ func GetSession(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	beego.Info("获取session信息 GetSession api/v1.0/session")
 
 	cookie, err := r.Cookie("userlogin")
-	if err != nil {
+	if err != nil || cookie.Value == "" {
 		// we want to augment the response 直接返回说明用户为登陆
 		response := map[string]interface{}{
 			"errno":  utils.RECODE_SESSIONERR,
@@ -307,6 +308,7 @@ func GetSession(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 			http.Error(w, err.Error(), 500)
 			return
 		}
+		return
 	}
 
 	// 创建服务
@@ -336,6 +338,75 @@ func GetSession(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	// 回传数据的时候是直接发送过去的 并没有设置数据格式 所以需要设置
 	w.Header().Set("Content-Type", "application/json")
 
+	// encode and write the response as json
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+}
+
+// PostLogin 登陆
+func PostLogin(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	// decode the incoming request as json
+
+	fmt.Println("登陆 PostLogin /api/v1.0/sessions")
+
+	// 接收前端发送过来的json数据进行解码
+	var request map[string]interface{}
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+
+	if request["mobile"].(string) == "" || request["password"].(string) == "" {
+		// we want to augment the response 准备回传数据
+		response := map[string]interface{}{
+			"errno":  utils.RECODE_DATAERR,
+			"errmsg": utils.RecodeText(utils.RECODE_DATAERR),
+		}
+		// 设置返回数据的格式
+		w.Header().Set("Content-Type", "application/json")
+		// encode and write the response as json 发送给前端
+		if err := json.NewEncoder(w).Encode(response); err != nil {
+			http.Error(w, err.Error(), 500)
+			return
+		}
+		return
+	}
+
+	// 创建服务
+	server := grpc.NewService()
+	server.Init()
+
+	// call the backend service 调用服务
+	PostLoginClient := POSTLogin.NewPostLoginService("go.micro.srv.PostLogin", server.Client())
+	rsp, err := PostLoginClient.PostLogin(context.TODO(), &POSTLogin.Request{
+		Mobile:   request["mobile"].(string),
+		Password: request["password"].(string),
+	})
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+
+	cookie, err := r.Cookie("userlogin")
+	if err != nil || cookie.Value == "" {
+		cookie := http.Cookie{
+			Name:   "userlogin",
+			Value:  rsp.SessionId,
+			Path:   "/",
+			MaxAge: 600,
+		}
+		http.SetCookie(w, &cookie)
+	}
+
+	// we want to augment the response
+	response := map[string]interface{}{
+		"errno":  rsp.Errno,
+		"errmsg": rsp.Errmsg,
+	}
+	// 设置返回数据的格式
+	w.Header().Set("Content-Type", "application/json")
 	// encode and write the response as json
 	if err := json.NewEncoder(w).Encode(response); err != nil {
 		http.Error(w, err.Error(), 500)

@@ -26,7 +26,7 @@ import (
 
 type PostRet struct{}
 
-// 加密函数
+// Md5String 加密函数
 func Md5String(s string) string {
 	// 创建一个md5对象
 	h := md5.New()
