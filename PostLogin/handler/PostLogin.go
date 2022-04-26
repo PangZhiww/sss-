@@ -92,6 +92,7 @@ func (e *PostLogin) PostLogin(ctx context.Context, req *POSTLogin.Request, rsp *
 	// user_id
 	sessionuser_id := sessionId + "user_id"
 	bm.Put(sessionuser_id, user.Id, time.Second*600)
+	fmt.Println("user.Id:", user.Id)
 	// name
 	sessionname := sessionId + "name"
 	bm.Put(sessionname, user.Name, time.Second*600)

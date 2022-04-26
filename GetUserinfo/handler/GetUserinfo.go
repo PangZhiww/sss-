@@ -8,7 +8,7 @@ import (
 	"github.com/astaxie/beego/cache"
 	_ "github.com/astaxie/beego/cache/redis"
 	"github.com/astaxie/beego/orm"
-	"reflect"
+	"github.com/garyburd/redigo/redis"
 	models "sss/IhomeWeb/model"
 	"sss/IhomeWeb/utils"
 	"strconv"
@@ -60,10 +60,17 @@ func (e *GetUserinfo) GetUserinfo(ctx context.Context, req *GetUserInfo.Request,
 	sessionuserId := sessionId + "user_id"
 
 	/*通过key获取到user_id*/
-	user_id := bm.Get(sessionuserId)
-	fmt.Println(reflect.TypeOf(user_id), "user_id:", user_id)
-	id := int(user_id.([]uint8)[0])
-	fmt.Println(reflect.TypeOf(id), "id:", id)
+	userId := bm.Get(sessionuserId)
+	// fmt.Println(reflect.TypeOf(userId), "user_id:", userId)
+	userIdStr, _ := redis.String(userId, nil)
+
+	/*
+		id := int(userId.([]uint8)[0]) 已废弃
+		fmt.Println(reflect.TypeOf(id), "id:", id)
+	*/
+
+	// fmt.Println(reflect.TypeOf(userIdStr), "id:", userIdStr)
+	id, _ := strconv.Atoi(userIdStr)
 
 	/*通过user_id获取到用户表信息*/
 	// 创建一个user对象
