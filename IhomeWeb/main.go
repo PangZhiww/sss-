@@ -42,6 +42,8 @@ func main() {
 	rou.POST("/api/v1.0/sessions", handler.PostLogin)
 	// 退出登陆
 	rou.DELETE("/api/v1.0/session", handler.DeleteSession)
+	// 获取用户信息
+	rou.GET("/api/v1.0/user", handler.GetUserinfo)
 
 	// register html handler 映射前端页面
 	//service.Handle("/", http.FileServer(http.Dir("html")))

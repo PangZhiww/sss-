@@ -2,15 +2,15 @@ package handler
 
 import (
 	"context"
+
 	"encoding/json"
 	"fmt"
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/cache"
 	_ "github.com/astaxie/beego/cache/redis"
-	"sss/IhomeWeb/utils"
-
 	_ "github.com/garyburd/redigo/redis"
 	_ "github.com/gomodule/redigo/redis"
+	"sss/IhomeWeb/utils"
 
 	DELETESession "sss/DeleteSession/proto/DeleteSession"
 )

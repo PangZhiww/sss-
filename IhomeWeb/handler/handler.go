@@ -17,12 +17,12 @@ import (
 	GetSmsCD "sss/GetSmscd/proto/GetSmscd"
 	models "sss/IhomeWeb/model"
 	"sss/IhomeWeb/utils"
-
 	PostRET "sss/PostRet/proto/PostRet"
 
 	GetSESSION "sss/GetSession/proto/GetSession"
 
 	DELETESession "sss/DeleteSession/proto/DeleteSession"
+	GetUserInfo "sss/GetUserinfo/proto/GetUserinfo"
 	POSTLogin "sss/PostLogin/proto/PostLogin"
 )
 
@@ -232,6 +232,7 @@ func PostRet(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		for s, i := range request {
 			fmt.Println("PostRet session request",s, i)
 		}
+
 	*/
 
 	if request["mobile"].(string) == "" || request["password"].(string) == "" || request["sms_code"].(string) == "" {
@@ -424,6 +425,68 @@ func DeleteSession(w http.ResponseWriter, r *http.Request, _ httprouter.Params) 
 
 	// call the backend service
 	DeleteSessionClient := DELETESession.NewDeleteSessionService("go.micro.srv.DeleteSession", server.Client())
+	fmt.Println("11111")
+	// 获取cookie
+	cookie, err := r.Cookie("userlogin")
+	if err != nil || cookie.Value == "" {
+		// we want to augment the response 准备回传数据
+		response := map[string]interface{}{
+			"errno":  utils.RECODE_DATAERR,
+			"errmsg": utils.RecodeText(utils.RECODE_DATAERR),
+		}
+		// 设置返回数据的格式
+		w.Header().Set("Content-Type", "application/json")
+		// encode and write the response as json 发送给前端
+		if err := json.NewEncoder(w).Encode(response); err != nil {
+			http.Error(w, err.Error(), 500)
+			return
+		}
+		return
+	}
+	fmt.Println(cookie)
+	fmt.Println("2222")
+
+	rsp, err := DeleteSessionClient.DeleteSession(context.TODO(), &DELETESession.Request{
+		SessionId: cookie.Value,
+	})
+	if err != nil {
+		fmt.Println(err)
+		http.Error(w, err.Error(), 500)
+		return
+	}
+	fmt.Println("3333")
+	// 删除sessionId
+	cookie, err = r.Cookie("userlogin")
+	if cookie.Value != "" || err == nil {
+		cookie := http.Cookie{Name: "userlogin", Path: "/", MaxAge: -1, Value: ""}
+		http.SetCookie(w, &cookie)
+	}
+	fmt.Println("4444")
+	// we want to augment the response
+	response := map[string]interface{}{
+		"errno":  rsp.Errno,
+		"errmsg": rsp.Errmsg,
+	}
+	// 设置返回数据的格式
+	w.Header().Set("Content-Type", "application/json")
+	// encode and write the response as json
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+
+}
+
+// GetUserinfo 获取用户信息
+func GetUserinfo(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+
+	fmt.Println(" GetUserinfo 获取用户信息 /api/v1.0/user ")
+
+	server := grpc.NewService()
+	server.Init()
+
+	// call the backend service
+	GetUserinfoClient := GetUserInfo.NewGetUserinfoService("go.micro.srv.GetUserinfo", server.Client())
 
 	// 获取cookie
 	cookie, err := r.Cookie("userlogin")
@@ -443,7 +506,8 @@ func DeleteSession(w http.ResponseWriter, r *http.Request, _ httprouter.Params) 
 		return
 	}
 
-	rsp, err := DeleteSessionClient.DeleteSession(context.TODO(), &DELETESession.Request{
+	// 远程调用函数
+	rsp, err := GetUserinfoClient.GetUserinfo(context.TODO(), &GetUserInfo.Request{
 		SessionId: cookie.Value,
 	})
 	if err != nil {
@@ -451,17 +515,27 @@ func DeleteSession(w http.ResponseWriter, r *http.Request, _ httprouter.Params) 
 		return
 	}
 
-	// 删除sessionId
-	cookie, err = r.Cookie("userlogin")
-	if cookie.Value != "" || err == nil {
-		cookie := http.Cookie{Name: "userlogin", Path: "/", MaxAge: -1, Value: ""}
-		http.SetCookie(w, &cookie)
-	}
+	data := make(map[string]interface{})
+	/*
+		"user_id": 1,
+		"name": "Panda",
+		"mobile": "110",
+		"real_name": "熊猫",
+		"id_card": "210112244556677",
+		"avatar_url":
+	*/
+	data["user_id"] = rsp.UserId
+	data["name"] = rsp.Name
+	data["mobile"] = rsp.Mobile
+	data["real_name"] = rsp.RealName
+	data["id_card"] = rsp.IdCard
+	data["avatar_url"] = utils.AddDomain2Url(rsp.AvatarUrl)
 
 	// we want to augment the response
 	response := map[string]interface{}{
 		"errno":  rsp.Errno,
 		"errmsg": rsp.Errmsg,
+		"data":   data,
 	}
 	// 设置返回数据的格式
 	w.Header().Set("Content-Type", "application/json")
@@ -470,7 +544,6 @@ func DeleteSession(w http.ResponseWriter, r *http.Request, _ httprouter.Params) 
 		http.Error(w, err.Error(), 500)
 		return
 	}
-
 }
 
 // GetIndex 获取首页轮播图信息
