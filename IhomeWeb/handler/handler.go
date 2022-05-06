@@ -7,6 +7,7 @@ import (
 	"github.com/afocus/captcha"
 	"github.com/astaxie/beego"
 	"github.com/julienschmidt/httprouter"
+	"github.com/micro/go-micro/client"
 	"github.com/micro/go-micro/service/grpc"
 	"image"
 	"image/png"
@@ -18,11 +19,13 @@ import (
 	models "sss/IhomeWeb/model"
 	"sss/IhomeWeb/utils"
 	PostRET "sss/PostRet/proto/PostRet"
+	"time"
 
 	GetSESSION "sss/GetSession/proto/GetSession"
 
 	DELETESession "sss/DeleteSession/proto/DeleteSession"
 	GetUserInfo "sss/GetUserinfo/proto/GetUserinfo"
+	POSTAvatar "sss/PostAvatar/proto/PostAvatar"
 	POSTLogin "sss/PostLogin/proto/PostLogin"
 )
 
@@ -536,6 +539,39 @@ func GetUserinfo(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		"errno":  rsp.Errno,
 		"errmsg": rsp.Errmsg,
 		"data":   data,
+	}
+	// 设置返回数据的格式
+	w.Header().Set("Content-Type", "application/json")
+	// encode and write the response as json
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+}
+
+// PostAvatar 上传头像
+func PostAvatar(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	// decode the incoming request as json
+	var request map[string]interface{}
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+
+	// call the backend service
+	PostAvatarClient := POSTAvatar.NewPostAvatarService("go.micro.srv.PostAvatar", client.DefaultClient)
+	rsp, err := PostAvatarClient.Call(context.TODO(), &POSTAvatar.Request{
+		Name: request["name"].(string),
+	})
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+
+	// we want to augment the response
+	response := map[string]interface{}{
+		"msg": rsp.Msg,
+		"ref": time.Now().UnixNano(),
 	}
 	// 设置返回数据的格式
 	w.Header().Set("Content-Type", "application/json")
