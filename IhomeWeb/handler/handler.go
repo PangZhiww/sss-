@@ -7,7 +7,6 @@ import (
 	"github.com/afocus/captcha"
 	"github.com/astaxie/beego"
 	"github.com/julienschmidt/httprouter"
-	"github.com/micro/go-micro/client"
 	"github.com/micro/go-micro/service/grpc"
 	"image"
 	"image/png"
@@ -15,13 +14,11 @@ import (
 	"regexp"
 	GETAREA "sss/GetArea/proto/GetArea"
 	GetImageCD "sss/GetImageCd/proto/GetImageCd"
+	GetSESSION "sss/GetSession/proto/GetSession"
 	GetSmsCD "sss/GetSmscd/proto/GetSmscd"
 	models "sss/IhomeWeb/model"
 	"sss/IhomeWeb/utils"
 	PostRET "sss/PostRet/proto/PostRet"
-	"time"
-
-	GetSESSION "sss/GetSession/proto/GetSession"
 
 	DELETESession "sss/DeleteSession/proto/DeleteSession"
 	GetUserInfo "sss/GetUserinfo/proto/GetUserinfo"
@@ -551,27 +548,95 @@ func GetUserinfo(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 
 // PostAvatar 上传头像
 func PostAvatar(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	// decode the incoming request as json
-	var request map[string]interface{}
-	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
-		http.Error(w, err.Error(), 500)
+
+	fmt.Println(" PostAvatar 上传头像 api/v1.0/user/avatar ")
+
+	// 获取前端发送的文件信息
+	// func (r *Request) FormFile(key string) (multipart.File, *multipart.FileHeader, error)
+	File, FileHeader, err := r.FormFile("avatar")
+	if err != nil {
+		// we want to augment the response 准备回传数据
+		response := map[string]interface{}{
+			"errno":  utils.RECODE_DATAERR,
+			"errmsg": utils.RecodeText(utils.RECODE_DATAERR),
+		}
+		// 设置返回数据的格式
+		w.Header().Set("Content-Type", "application/json")
+		// encode and write the response as json
+		if err := json.NewEncoder(w).Encode(response); err != nil {
+			http.Error(w, err.Error(), 500)
+			return
+		}
 		return
 	}
 
+	fmt.Println("文件大小", FileHeader.Size)
+	fmt.Println("文件名", FileHeader.Filename)
+
+	// 创建一个文件大小的切片
+	fileBuffrt := make([]byte, FileHeader.Size)
+
+	// 将file的数据读到fileBuffrt里
+	_, err = File.Read(fileBuffrt)
+	if err != nil {
+		// we want to augment the response 准备回传数据
+		response := map[string]interface{}{
+			"errno":  utils.RECODE_DATAERR,
+			"errmsg": utils.RecodeText(utils.RECODE_DATAERR),
+		}
+		// 设置返回数据的格式
+		w.Header().Set("Content-Type", "application/json")
+		// encode and write the response as json
+		if err := json.NewEncoder(w).Encode(response); err != nil {
+			http.Error(w, err.Error(), 500)
+			return
+		}
+		return
+	}
+
+	// 获取cookie
+	cookie, err := r.Cookie("userlogin")
+	if err != nil || cookie.Value == "" {
+		// we want to augment the response 准备回传数据
+		response := map[string]interface{}{
+			"errno":  utils.RECODE_DATAERR,
+			"errmsg": utils.RecodeText(utils.RECODE_DATAERR),
+		}
+		// 设置返回数据的格式
+		w.Header().Set("Content-Type", "application/json")
+		// encode and write the response as json 发送给前端
+		if err := json.NewEncoder(w).Encode(response); err != nil {
+			http.Error(w, err.Error(), 500)
+			return
+		}
+		return
+	}
+
+	// 连接服务
+	client := grpc.NewService()
+	client.Init()
+
 	// call the backend service
-	PostAvatarClient := POSTAvatar.NewPostAvatarService("go.micro.srv.PostAvatar", client.DefaultClient)
-	rsp, err := PostAvatarClient.Call(context.TODO(), &POSTAvatar.Request{
-		Name: request["name"].(string),
+	PostAvatarClient := POSTAvatar.NewPostAvatarService("go.micro.srv.PostAvatar", client.Client())
+	rsp, err := PostAvatarClient.PostAvatar(context.TODO(), &POSTAvatar.Request{
+		SessionId: cookie.Value,
+		Fileext:   FileHeader.Filename,
+		Filesize:  FileHeader.Size,
+		Avatar:    fileBuffrt,
 	})
 	if err != nil {
 		http.Error(w, err.Error(), 500)
 		return
 	}
 
+	data := make(map[string]string)
+	data["avatar_url"] = utils.AddDomain2Url(rsp.AvatarUrl)
+
 	// we want to augment the response
 	response := map[string]interface{}{
-		"msg": rsp.Msg,
-		"ref": time.Now().UnixNano(),
+		"errno":  rsp.Errno,
+		"errmsg": rsp.Errmsg,
+		"data":   data,
 	}
 	// 设置返回数据的格式
 	w.Header().Set("Content-Type", "application/json")

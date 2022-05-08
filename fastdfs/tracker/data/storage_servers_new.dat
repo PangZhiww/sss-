@@ -14,7 +14,7 @@
 	subdir_count_per_path=256
 	upload_priority=10
 	total_mb=27501
-	free_mb=4778
+	free_mb=5068
 	total_upload_count=1
 	success_upload_count=1
 	total_append_count=0
@@ -50,7 +50,7 @@
 	last_source_update=1651132621
 	last_sync_update=0
 	last_synced_timestamp=0
-	last_heart_beat_time=1651509625
+	last_heart_beat_time=1652005412
 	changelog_offset=0
 
 
