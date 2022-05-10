@@ -46,6 +46,10 @@ func main() {
 	rou.GET("/api/v1.0/user", handler.GetUserinfo)
 	// 上传头像
 	rou.POST("/api/v1.0/user/avatar", handler.PostAvatar)
+	// 用户认证检查
+	rou.GET("/api/v1.0/user/auth", handler.GetUserAuth)
+	// 实名认证
+	rou.POST("/api/v1.0/user/auth", handler.PostUserAuth)
 
 	// register html handler 映射前端页面
 	//service.Handle("/", http.FileServer(http.Dir("html")))

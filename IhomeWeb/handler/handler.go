@@ -12,18 +12,18 @@ import (
 	"image/png"
 	"net/http"
 	"regexp"
+	DELETESession "sss/DeleteSession/proto/DeleteSession"
 	GETAREA "sss/GetArea/proto/GetArea"
 	GetImageCD "sss/GetImageCd/proto/GetImageCd"
 	GetSESSION "sss/GetSession/proto/GetSession"
 	GetSmsCD "sss/GetSmscd/proto/GetSmscd"
+	GetUserInfo "sss/GetUserinfo/proto/GetUserinfo"
 	models "sss/IhomeWeb/model"
 	"sss/IhomeWeb/utils"
-	PostRET "sss/PostRet/proto/PostRet"
-
-	DELETESession "sss/DeleteSession/proto/DeleteSession"
-	GetUserInfo "sss/GetUserinfo/proto/GetUserinfo"
 	POSTAvatar "sss/PostAvatar/proto/PostAvatar"
 	POSTLogin "sss/PostLogin/proto/PostLogin"
+	PostRET "sss/PostRet/proto/PostRet"
+	POSTUserAuth "sss/PostUserAuth/proto/PostUserAuth"
 )
 
 /*
@@ -637,6 +637,135 @@ func PostAvatar(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		"errno":  rsp.Errno,
 		"errmsg": rsp.Errmsg,
 		"data":   data,
+	}
+	// 设置返回数据的格式
+	w.Header().Set("Content-Type", "application/json")
+	// encode and write the response as json
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+}
+
+// GetUserAuth 用户信息检查
+func GetUserAuth(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+
+	fmt.Println(" GetUserAuth 用户信息检查 api/v1.0/user/auth ")
+
+	server := grpc.NewService()
+	server.Init()
+
+	// call the backend service
+	GetUserinfoClient := GetUserInfo.NewGetUserinfoService("go.micro.srv.GetUserinfo", server.Client())
+
+	// 获取cookie
+	cookie, err := r.Cookie("userlogin")
+	if err != nil || cookie.Value == "" {
+		// we want to augment the response 准备回传数据
+		response := map[string]interface{}{
+			"errno":  utils.RECODE_DATAERR,
+			"errmsg": utils.RecodeText(utils.RECODE_DATAERR),
+		}
+		// 设置返回数据的格式
+		w.Header().Set("Content-Type", "application/json")
+		// encode and write the response as json 发送给前端
+		if err := json.NewEncoder(w).Encode(response); err != nil {
+			http.Error(w, err.Error(), 500)
+			return
+		}
+		return
+	}
+
+	// 远程调用函数
+	rsp, err := GetUserinfoClient.GetUserinfo(context.TODO(), &GetUserInfo.Request{
+		SessionId: cookie.Value,
+	})
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+
+	data := make(map[string]interface{})
+	/*
+		"user_id": 1,
+		"name": "Panda",
+		"mobile": "110",
+		"real_name": "熊猫",
+		"id_card": "210112244556677",
+		"avatar_url":
+	*/
+	data["user_id"] = rsp.UserId
+	data["name"] = rsp.Name
+	data["mobile"] = rsp.Mobile
+	data["real_name"] = rsp.RealName
+	data["id_card"] = rsp.IdCard
+	data["avatar_url"] = utils.AddDomain2Url(rsp.AvatarUrl)
+
+	// we want to augment the response
+	response := map[string]interface{}{
+		"errno":  rsp.Errno,
+		"errmsg": rsp.Errmsg,
+		"data":   data,
+	}
+	// 设置返回数据的格式
+	w.Header().Set("Content-Type", "application/json")
+	// encode and write the response as json
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+}
+
+// PostUserAuth 实名认证
+func PostUserAuth(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+
+	fmt.Println("PostUserAuth 实名认证 /api/v1.0/user/auth ")
+
+	// decode the incoming request as json 接收前端发送过来的数据解码到request
+	var request map[string]interface{}
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+
+	client := grpc.NewService()
+	client.Init()
+
+	// 获取cookie
+	cookie, err := r.Cookie("userlogin")
+	if err != nil || cookie.Value == "" {
+		// we want to augment the response 准备回传数据
+		response := map[string]interface{}{
+			"errno":  utils.RECODE_DATAERR,
+			"errmsg": utils.RecodeText(utils.RECODE_DATAERR),
+		}
+		// 设置返回数据的格式
+		w.Header().Set("Content-Type", "application/json")
+		// encode and write the response as json 发送给前端
+		if err := json.NewEncoder(w).Encode(response); err != nil {
+			http.Error(w, err.Error(), 500)
+			return
+		}
+		return
+	}
+
+	// call the backend service
+	PostUserAuth := POSTUserAuth.NewPostUserAuthService("go.micro.srv.PostUserAuth", client.Client())
+	rsp, err := PostUserAuth.PostUserAuth(context.TODO(), &POSTUserAuth.Request{
+
+		SessionId: cookie.Value,
+		IdCard:    request["id_card"].(string),
+		RealName:  request["real_name"].(string),
+	})
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+
+	// we want to augment the response
+	response := map[string]interface{}{
+		"errno":  rsp.Errno,
+		"errmsg": rsp.Errmsg,
 	}
 	// 设置返回数据的格式
 	w.Header().Set("Content-Type", "application/json")

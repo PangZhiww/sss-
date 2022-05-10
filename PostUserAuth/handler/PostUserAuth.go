@@ -5,28 +5,30 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/astaxie/beego"
-	"github.com/astaxie/beego/cache"
-	_ "github.com/astaxie/beego/cache/redis"
 	"github.com/astaxie/beego/orm"
 	"github.com/garyburd/redigo/redis"
 	models "sss/IhomeWeb/model"
 	"sss/IhomeWeb/utils"
 	"strconv"
+	"time"
+
+	"github.com/astaxie/beego/cache"
+	_ "github.com/astaxie/beego/cache/redis"
 
 	_ "github.com/garyburd/redigo/redis"
 	_ "github.com/gomodule/redigo/redis"
 
-	GetUserInfo "sss/GetUserinfo/proto/GetUserinfo"
+	POSTUserAuth "sss/PostUserAuth/proto/PostUserAuth"
 )
 
-type GetUserinfo struct{}
+type PostUserAuth struct{}
 
-// GetUserinfo is a single request handler called via client.Call or the generated client code
-func (e *GetUserinfo) GetUserinfo(ctx context.Context, req *GetUserInfo.Request, rsp *GetUserInfo.Response) error {
+// PostUserAuth is a single request handler called via client.Call or the generated client code
+func (e *PostUserAuth) PostUserAuth(ctx context.Context, req *POSTUserAuth.Request, rsp *POSTUserAuth.Response) error {
 
-	fmt.Println(" GetUserinfo 获取用户信息 /api/v1.0/user ")
+	fmt.Println("PostUserAuth 实名认证 /api/v1.0/user/auth ")
 
-	/*初始化错误码*/
+	/*初始化返回值*/
 	rsp.Errno = utils.RECODE_OK
 	rsp.Errmsg = utils.RecodeText(rsp.Errno)
 
@@ -54,46 +56,36 @@ func (e *GetUserinfo) GetUserinfo(ctx context.Context, req *GetUserInfo.Request,
 		rsp.Errno = utils.RECODE_DBERR
 		// 错误信息
 		rsp.Errmsg = utils.RecodeText(rsp.Errno)
+		return nil
 	}
 
-	/*拼接Key*/
-	sessionuserId := sessionId + "user_id"
+	/*通过sessionId拼接Key 查询user_id*/
+	sessionUserId := sessionId + "user_id"
 
-	/*通过key获取到user_id*/
-	userId := bm.Get(sessionuserId)
+	userId := bm.Get(sessionUserId)
 	fmt.Println("userId:", userId)
-	// fmt.Println(reflect.TypeOf(userId), "user_id:", userId)
 	userIdStr, _ := redis.String(userId, nil)
 	fmt.Println("userIdStr:", userIdStr)
-
-	/*
-		id := int(userId.([]uint8)[0]) 已废弃
-		fmt.Println(reflect.TypeOf(id), "id:", id)
-	*/
-
-	// fmt.Println(reflect.TypeOf(userIdStr), "id:", userIdStr)
 	id, _ := strconv.Atoi(userIdStr)
 	fmt.Println("id:", id)
 
-	/*通过user_id获取到用户表信息*/
-	// 创建一个user对象
-	user := models.User{Id: id}
-	// 创建orm句柄
+	/*通过user_id 更新表 将身份证号和姓名更新到数据库表单中*/
+	// 创建user表单对象
+	user := models.User{Id: id, Id_card: req.IdCard, Real_name: req.RealName}
+
 	o := orm.NewOrm()
-	err = o.Read(&user)
+	_, err = o.Update(&user, "real_name", "id_card")
 	if err != nil {
-		beego.Info("数据库获取失败", err)
+		beego.Info("身份信息更新失败", err)
+		// 初始化 错误码
 		rsp.Errno = utils.RECODE_DBERR
+		// 错误信息
 		rsp.Errmsg = utils.RecodeText(rsp.Errno)
+		return nil
 	}
 
-	/*将信息返回*/
-	rsp.UserId = strconv.Itoa(user.Id)
-	rsp.Name = user.Name
-	rsp.RealName = user.Real_name
-	rsp.IdCard = user.Id_card
-	rsp.Mobile = user.Mobile
-	rsp.AvatarUrl = user.Avatar_url
+	/*刷新下session时间*/
+	bm.Put(sessionUserId, userIdStr, time.Second*600)
 
 	return nil
 }
