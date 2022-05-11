@@ -2,16 +2,15 @@ package main
 
 import (
 	"github.com/micro/go-micro"
+	"github.com/micro/go-micro/service/grpc"
 	"github.com/micro/go-micro/util/log"
 	"sss/GetUserHouses/handler"
-	"sss/GetUserHouses/subscriber"
-
-	GetUserHouses "sss/GetUserHouses/proto/GetUserHouses"
+	GETUserHouses "sss/GetUserHouses/proto/GetUserHouses"
 )
 
 func main() {
 	// New Service
-	service := micro.NewService(
+	service := grpc.NewService(
 		micro.Name("go.micro.srv.GetUserHouses"),
 		micro.Version("latest"),
 	)
@@ -20,13 +19,7 @@ func main() {
 	service.Init()
 
 	// Register Handler
-	GetUserHouses.RegisterGetUserHousesHandler(service.Server(), new(handler.GetUserHouses))
-
-	// Register Struct as Subscriber
-	micro.RegisterSubscriber("go.micro.srv.GetUserHouses", service.Server(), new(subscriber.GetUserHouses))
-
-	// Register Function as Subscriber
-	micro.RegisterSubscriber("go.micro.srv.GetUserHouses", service.Server(), subscriber.Handler)
+	GETUserHouses.RegisterGetUserHousesHandler(service.Server(), new(handler.GetUserHouses))
 
 	// Run service
 	if err := service.Run(); err != nil {
