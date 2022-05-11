@@ -18,7 +18,7 @@ message Request {
 message Response {
 	string Errno = 1;
 	string Errmsg = 2;
-	string Mix = 3; // 查询到的完整数据的二进制流
+	bytes Mix = 3; // 查询到的完整数据的二进制流
 }
 
 message StreamingRequest {
