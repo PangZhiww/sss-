@@ -1,11 +1,10 @@
 syntax = "proto3";
 
+option go_package = "proto/GetUserHouses";
 package go.micro.srv.GetUserHouses;
 
 service GetUserHouses {
-	rpc Call(Request) returns (Response) {}
-	rpc Stream(StreamingRequest) returns (stream StreamingResponse) {}
-	rpc PingPong(stream Ping) returns (stream Pong) {}
+	rpc GetUserHouses(Request) returns (Response) {}
 }
 
 message Message {
@@ -13,11 +12,13 @@ message Message {
 }
 
 message Request {
-	string name = 1;
+	string SessionId = 1;
 }
 
 message Response {
-	string msg = 1;
+	string Errno = 1;
+	string Errmsg = 2;
+	string Mix = 3; // 查询到的完整数据的二进制流
 }
 
 message StreamingRequest {

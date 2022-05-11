@@ -4,17 +4,17 @@ import (
 	"context"
 	"github.com/micro/go-micro/util/log"
 
-	GetUserHouses "sss/GetUserHouses/proto/GetUserHouses"
+	GETUserHouses "sss/GetUserHouses/proto/GetUserHouses"
 )
 
 type GetUserHouses struct{}
 
-func (e *GetUserHouses) Handle(ctx context.Context, msg *GetUserHouses.Message) error {
+func (e *GetUserHouses) Handle(ctx context.Context, msg *GETUserHouses.Message) error {
 	log.Log("Handler Received message: ", msg.Say)
 	return nil
 }
 
-func Handler(ctx context.Context, msg *GetUserHouses.Message) error {
+func Handler(ctx context.Context, msg *GETUserHouses.Message) error {
 	log.Log("Function Received message: ", msg.Say)
 	return nil
 }

@@ -58,3 +58,5 @@
 [2022-05-09 15:55:40] INFO - file: tracker_relationship.c, line: 407, I am the new tracker leader 10.1.1.231:22122
 [2022-05-10 10:49:20] INFO - file: tracker_mem.c, line: 5964, storage server 10.1.1.231:23000 idle too long, status change to offline!
 [2022-05-10 17:48:26] INFO - file: tracker_mem.c, line: 5964, storage server 10.1.1.231:23000 idle too long, status change to offline!
+[2022-05-11 10:47:59] INFO - file: tracker_mem.c, line: 5964, storage server 10.1.1.231:23000 idle too long, status change to offline!
+[2022-05-11 18:28:11] INFO - file: tracker_mem.c, line: 5964, storage server 10.1.1.231:23000 idle too long, status change to offline!

@@ -50,6 +50,8 @@ func main() {
 	rou.GET("/api/v1.0/user/auth", handler.GetUserAuth)
 	// 实名认证
 	rou.POST("/api/v1.0/user/auth", handler.PostUserAuth)
+	// 获取用户已发布的房源
+	rou.GET("/api/v1.0/user/houses", handler.GetUserHouses)
 
 	// register html handler 映射前端页面
 	//service.Handle("/", http.FileServer(http.Dir("html")))

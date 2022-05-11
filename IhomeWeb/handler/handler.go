@@ -17,6 +17,7 @@ import (
 	GetImageCD "sss/GetImageCd/proto/GetImageCd"
 	GetSESSION "sss/GetSession/proto/GetSession"
 	GetSmsCD "sss/GetSmscd/proto/GetSmscd"
+	GETUserHouses "sss/GetUserHouses/proto/GetUserHouses"
 	GetUserInfo "sss/GetUserinfo/proto/GetUserinfo"
 	models "sss/IhomeWeb/model"
 	"sss/IhomeWeb/utils"
@@ -766,6 +767,71 @@ func PostUserAuth(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	response := map[string]interface{}{
 		"errno":  rsp.Errno,
 		"errmsg": rsp.Errmsg,
+	}
+	// 设置返回数据的格式
+	w.Header().Set("Content-Type", "application/json")
+	// encode and write the response as json
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+}
+
+// GetUserHouses 获取用户已发布的房源
+func GetUserHouses(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+
+	fmt.Println("获取用户已发布的房源 GetUserHouses api/v1.0/user/houses ")
+
+	// 获取cookie
+	cookie, err := r.Cookie("userlogin")
+	if err != nil || cookie.Value == "" {
+		// we want to augment the response 准备回传数据
+		response := map[string]interface{}{
+			"errno":  utils.RECODE_DATAERR,
+			"errmsg": utils.RecodeText(utils.RECODE_DATAERR),
+		}
+		// 设置返回数据的格式
+		w.Header().Set("Content-Type", "application/json")
+		// encode and write the response as json 发送给前端
+		if err := json.NewEncoder(w).Encode(response); err != nil {
+			http.Error(w, err.Error(), 500)
+			return
+		}
+		return
+	}
+
+	client := grpc.NewService()
+	client.Init()
+
+	// call the backend service
+	GetUserHousesClient := GETUserHouses.NewGetUserHousesService("go.micro.srv.GetUserHouses", client.Client())
+	rsp, err := GetUserHousesClient.GetUserHouses(context.TODO(), &GETUserHouses.Request{
+		SessionId: cookie.Value,
+	})
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+
+	housesList := []models.House{}
+	json.Unmarshal(rsp.Mix, &housesList)
+
+	var houses []interface{}
+	// 遍历返回的完整房屋信息
+	for _, value := range housesList {
+		// 获取到有用的添加到切片当中
+		houses = append(houses, value.To_house_info())
+	}
+
+	// 创建一个data的map
+	data := make(map[string]interface{})
+	data["houses"] = houses
+
+	// we want to augment the response
+	response := map[string]interface{}{
+		"errno":  rsp.Errno,
+		"errmsg": rsp.Errmsg,
+		"data":   data,
 	}
 	// 设置返回数据的格式
 	w.Header().Set("Content-Type", "application/json")
