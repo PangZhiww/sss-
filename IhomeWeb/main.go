@@ -52,6 +52,8 @@ func main() {
 	rou.POST("/api/v1.0/user/auth", handler.PostUserAuth)
 	// 获取用户已发布的房源
 	rou.GET("/api/v1.0/user/houses", handler.GetUserHouses)
+	// 发布房源信息
+	rou.POST("/api/v1.0/houses", handler.PostHouses)
 
 	// register html handler 映射前端页面
 	//service.Handle("/", http.FileServer(http.Dir("html")))

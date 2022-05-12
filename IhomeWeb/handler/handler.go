@@ -10,6 +10,7 @@ import (
 	"github.com/micro/go-micro/service/grpc"
 	"image"
 	"image/png"
+	"io/ioutil"
 	"net/http"
 	"regexp"
 	DELETESession "sss/DeleteSession/proto/DeleteSession"
@@ -22,6 +23,7 @@ import (
 	models "sss/IhomeWeb/model"
 	"sss/IhomeWeb/utils"
 	POSTAvatar "sss/PostAvatar/proto/PostAvatar"
+	POSTHouses "sss/PostHouses/proto/PostHouses"
 	POSTLogin "sss/PostLogin/proto/PostLogin"
 	PostRET "sss/PostRet/proto/PostRet"
 	POSTUserAuth "sss/PostUserAuth/proto/PostUserAuth"
@@ -833,6 +835,66 @@ func GetUserHouses(w http.ResponseWriter, r *http.Request, _ httprouter.Params) 
 		"errmsg": rsp.Errmsg,
 		"data":   data,
 	}
+	// 设置返回数据的格式
+	w.Header().Set("Content-Type", "application/json")
+	// encode and write the response as json
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+}
+
+// PostHouses 发布房源信息
+func PostHouses(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+
+	fmt.Println("PostHouses 发布房源信息 /api/v1.0/houses ")
+
+	// decode the incoming request as json 将前端发送过来的数据整体读取
+	// func ReadAll(r io.Reader) ([]byte, error)
+	body, _ := ioutil.ReadAll(r.Body) // body就是一个json的二进制流
+
+	// 获取cookie
+	cookie, err := r.Cookie("userlogin")
+	if err != nil || cookie.Value == "" {
+		// we want to augment the response 准备回传数据
+		response := map[string]interface{}{
+			"errno":  utils.RECODE_DATAERR,
+			"errmsg": utils.RecodeText(utils.RECODE_DATAERR),
+		}
+		// 设置返回数据的格式
+		w.Header().Set("Content-Type", "application/json")
+		// encode and write the response as json 发送给前端
+		if err := json.NewEncoder(w).Encode(response); err != nil {
+			http.Error(w, err.Error(), 500)
+			return
+		}
+		return
+	}
+
+	client := grpc.NewService()
+	client.Init()
+
+	// call the backend service
+	PostHousesClient := POSTHouses.NewPostHousesService("go.micro.srv.PostHouses", client.Client())
+	rsp, err := PostHousesClient.PostHouses(context.TODO(), &POSTHouses.Request{
+		SessionId: cookie.Value,
+		Body:      body,
+	})
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+
+	data := make(map[string]interface{})
+	data["house_id"] = rsp.HousesId
+
+	// we want to augment the response
+	response := map[string]interface{}{
+		"errno":  rsp.Errno,
+		"errmsg": rsp.Errmsg,
+		"data":   data,
+	}
+
 	// 设置返回数据的格式
 	w.Header().Set("Content-Type", "application/json")
 	// encode and write the response as json

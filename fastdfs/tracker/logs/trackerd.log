@@ -60,3 +60,5 @@
 [2022-05-10 17:48:26] INFO - file: tracker_mem.c, line: 5964, storage server 10.1.1.231:23000 idle too long, status change to offline!
 [2022-05-11 10:47:59] INFO - file: tracker_mem.c, line: 5964, storage server 10.1.1.231:23000 idle too long, status change to offline!
 [2022-05-11 18:28:11] INFO - file: tracker_mem.c, line: 5964, storage server 10.1.1.231:23000 idle too long, status change to offline!
+[2022-05-12 08:47:06] INFO - file: tracker_mem.c, line: 5964, storage server 10.1.1.231:23000 idle too long, status change to offline!
+[2022-05-12 16:29:23] INFO - file: tracker_mem.c, line: 5964, storage server 10.1.1.231:23000 idle too long, status change to offline!
