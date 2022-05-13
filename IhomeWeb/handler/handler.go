@@ -7,6 +7,7 @@ import (
 	"github.com/afocus/captcha"
 	"github.com/astaxie/beego"
 	"github.com/julienschmidt/httprouter"
+	"github.com/micro/go-micro/client"
 	"github.com/micro/go-micro/service/grpc"
 	"image"
 	"image/png"
@@ -24,9 +25,11 @@ import (
 	"sss/IhomeWeb/utils"
 	POSTAvatar "sss/PostAvatar/proto/PostAvatar"
 	POSTHouses "sss/PostHouses/proto/PostHouses"
+	POSTHousesImage "sss/PostHousesImage/proto/PostHousesImage"
 	POSTLogin "sss/PostLogin/proto/PostLogin"
 	PostRET "sss/PostRet/proto/PostRet"
 	POSTUserAuth "sss/PostUserAuth/proto/PostUserAuth"
+	"time"
 )
 
 /*
@@ -895,6 +898,39 @@ func PostHouses(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		"data":   data,
 	}
 
+	// 设置返回数据的格式
+	w.Header().Set("Content-Type", "application/json")
+	// encode and write the response as json
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+}
+
+// PostHousesImage 上传房屋图片流程
+func PostHousesImage(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	// decode the incoming request as json
+	var request map[string]interface{}
+	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+
+	// call the backend service
+	PostHousesImageClient := POSTHousesImage.NewIhomeWebService("go.micro.srv.IhomeWeb", client.DefaultClient)
+	rsp, err := PostHousesImageClient.PostHousesImage(context.TODO(), &POSTHousesImage.Request{
+		Name: request["name"].(string),
+	})
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+
+	// we want to augment the response
+	response := map[string]interface{}{
+		"msg": rsp.Msg,
+		"ref": time.Now().UnixNano(),
+	}
 	// 设置返回数据的格式
 	w.Header().Set("Content-Type", "application/json")
 	// encode and write the response as json

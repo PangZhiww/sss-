@@ -317,3 +317,6 @@ data path: /home/microv1/go/src/sss/fastdfs/storage_data/data, mkdir sub dir don
 [2022-05-09 15:55:39] INFO - file: storage_func.c, line: 257, tracker_client_ip: 10.1.1.231, my_server_id_str: 10.1.1.231, g_server_id_in_filename: -419364598
 [2022-05-09 15:55:39] INFO - file: tracker_client_thread.c, line: 310, successfully connect to tracker server 10.1.1.231:22122, as a tracker client, my ip is 10.1.1.231
 [2022-05-09 15:56:09] INFO - file: tracker_client_thread.c, line: 1263, tracker server 10.1.1.231:22122, set tracker leader: 10.1.1.231:22122
+[2022-05-13 00:04:23] CRIT - file: fdfs_storaged.c, line: 474, catch signal 15, program exiting...
+[2022-05-13 00:04:23] INFO - exit normally.
+
