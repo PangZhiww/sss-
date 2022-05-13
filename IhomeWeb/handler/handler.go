@@ -7,7 +7,6 @@ import (
 	"github.com/afocus/captcha"
 	"github.com/astaxie/beego"
 	"github.com/julienschmidt/httprouter"
-	"github.com/micro/go-micro/client"
 	"github.com/micro/go-micro/service/grpc"
 	"image"
 	"image/png"
@@ -29,7 +28,6 @@ import (
 	POSTLogin "sss/PostLogin/proto/PostLogin"
 	PostRET "sss/PostRet/proto/PostRet"
 	POSTUserAuth "sss/PostUserAuth/proto/PostUserAuth"
-	"time"
 )
 
 /*
@@ -908,15 +906,9 @@ func PostHouses(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 }
 
 // PostHousesImage 上传房屋图片流程
-func PostHousesImage(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+func PostHousesImage(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
 	fmt.Println("PostHousesImage 上传房屋图片流程 /api/v1.0/houses/:id/images ")
-	// decode the incoming request as json
-	var request map[string]interface{}
-	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
-		http.Error(w, err.Error(), 500)
-		return
-	}
 
 	server := grpc.NewService()
 	server.Init()
@@ -929,10 +921,80 @@ func PostHousesImage(w http.ResponseWriter, r *http.Request, _ httprouter.Params
 		return
 	}
 
-	// we want to augment the response
+	/*获取houseId*/
+	houseId := ps.ByName("id")
+	/*获取sessionId*/
+	// 获取cookie
+	cookie, err := r.Cookie("userlogin")
+	if err != nil || cookie.Value == "" {
+		// we want to augment the response 准备回传数据
+		response := map[string]interface{}{
+			"errno":  utils.RECODE_DATAERR,
+			"errmsg": utils.RecodeText(utils.RECODE_DATAERR),
+		}
+		// 设置返回数据的格式
+		w.Header().Set("Content-Type", "application/json")
+		// encode and write the response as json 发送给前端
+		if err := json.NewEncoder(w).Encode(response); err != nil {
+			http.Error(w, err.Error(), 500)
+			return
+		}
+		return
+	}
+
+	/*获得前端发送的图片文件*/
+	file, hander, err := r.FormFile("house_image")
+	if err != nil {
+		fmt.Println("PostHousesImage err:", err)
+		// we want to augment the response 准备回传数据
+		response := map[string]interface{}{
+			"errno":  utils.RECODE_IOERR,
+			"errmsg": utils.RecodeText(utils.RECODE_IOERR),
+		}
+		// 设置返回数据的格式
+		w.Header().Set("Content-Type", "application/json")
+		// encode and write the response as json 发送给前端
+		if err := json.NewEncoder(w).Encode(response); err != nil {
+			http.Error(w, err.Error(), 500)
+			return
+		}
+		return
+	}
+
+	fmt.Println("file:", file)
+	fmt.Println("文件大小:", hander.Size)
+	fmt.Println("文件名:", hander.Filename)
+
+	// 创建二进制的空间用来存储文件
+	fileBuffer := make([]byte, hander.Size)
+	// 将文件读取到fileBuffer里
+	_, err = file.Read(fileBuffer)
+	if err != nil {
+		fmt.Println("PostHousesImage err:", err)
+		// we want to augment the response 准备回传数据
+		response := map[string]interface{}{
+			"errno":  utils.RECODE_IOERR,
+			"errmsg": utils.RecodeText(utils.RECODE_IOERR),
+		}
+		// 设置返回数据的格式
+		w.Header().Set("Content-Type", "application/json")
+		// encode and write the response as json 发送给前端
+		if err := json.NewEncoder(w).Encode(response); err != nil {
+			http.Error(w, err.Error(), 500)
+			return
+		}
+		return
+	}
+
+	// 准备返回值
+	data := make(map[string]interface{})
+	data["url"] = utils.AddDomain2Url(rsp.Url)
+
+	// we want to augment the response  返回数据map
 	response := map[string]interface{}{
-		"msg": rsp.Msg,
-		"ref": time.Now().UnixNano(),
+		"errno":  rsp.Errno,
+		"errmsg": rsp.Errmsg,
+		"data":   data,
 	}
 	// 设置返回数据的格式
 	w.Header().Set("Content-Type", "application/json")
