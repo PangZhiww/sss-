@@ -5,7 +5,6 @@ import (
 	"github.com/micro/go-micro/service/grpc"
 	"github.com/micro/go-micro/util/log"
 	"sss/PostHousesImage/handler"
-	"sss/PostHousesImage/subscriber"
 
 	POSTHousesImage "sss/PostHousesImage/proto/PostHousesImage"
 )

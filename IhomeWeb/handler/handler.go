@@ -909,6 +909,8 @@ func PostHouses(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 
 // PostHousesImage 上传房屋图片流程
 func PostHousesImage(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+
+	fmt.Println("PostHousesImage 上传房屋图片流程 /api/v1.0/houses/:id/images ")
 	// decode the incoming request as json
 	var request map[string]interface{}
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
@@ -916,11 +918,12 @@ func PostHousesImage(w http.ResponseWriter, r *http.Request, _ httprouter.Params
 		return
 	}
 
+	server := grpc.NewService()
+	server.Init()
+
 	// call the backend service
-	PostHousesImageClient := POSTHousesImage.NewIhomeWebService("go.micro.srv.IhomeWeb", client.DefaultClient)
-	rsp, err := PostHousesImageClient.PostHousesImage(context.TODO(), &POSTHousesImage.Request{
-		Name: request["name"].(string),
-	})
+	PostHousesImageClient := POSTHousesImage.NewPostHousesImageService("go.micro.srv.PostHousesImage", server.Client())
+	rsp, err := PostHousesImageClient.PostHousesImage(context.TODO(), &POSTHousesImage.Request{})
 	if err != nil {
 		http.Error(w, err.Error(), 500)
 		return
