@@ -915,11 +915,6 @@ func PostHousesImage(w http.ResponseWriter, r *http.Request, ps httprouter.Param
 
 	// call the backend service
 	PostHousesImageClient := POSTHousesImage.NewPostHousesImageService("go.micro.srv.PostHousesImage", server.Client())
-	rsp, err := PostHousesImageClient.PostHousesImage(context.TODO(), &POSTHousesImage.Request{})
-	if err != nil {
-		http.Error(w, err.Error(), 500)
-		return
-	}
 
 	/*获取houseId*/
 	houseId := ps.ByName("id")
@@ -986,6 +981,18 @@ func PostHousesImage(w http.ResponseWriter, r *http.Request, ps httprouter.Param
 		return
 	}
 
+	rsp, err := PostHousesImageClient.PostHousesImage(context.TODO(), &POSTHousesImage.Request{
+		Sessionid: cookie.Value,
+		Id:        houseId,
+		Image:     fileBuffer,
+		Filesize:  hander.Size,
+		Filename:  hander.Filename,
+	})
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+
 	// 准备返回值
 	data := make(map[string]interface{})
 	data["url"] = utils.AddDomain2Url(rsp.Url)
@@ -998,7 +1005,7 @@ func PostHousesImage(w http.ResponseWriter, r *http.Request, ps httprouter.Param
 	}
 	// 设置返回数据的格式
 	w.Header().Set("Content-Type", "application/json")
-	// encode and write the response as json
+	// encode and write the response as json 回发数据
 	if err := json.NewEncoder(w).Encode(response); err != nil {
 		http.Error(w, err.Error(), 500)
 		return
