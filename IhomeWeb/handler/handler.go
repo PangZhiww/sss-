@@ -15,6 +15,7 @@ import (
 	"regexp"
 	DELETESession "sss/DeleteSession/proto/DeleteSession"
 	GETAREA "sss/GetArea/proto/GetArea"
+	GETHouseInfo "sss/GetHouseInfo/proto/GetHouseInfo"
 	GetImageCD "sss/GetImageCd/proto/GetImageCd"
 	GetSESSION "sss/GetSession/proto/GetSession"
 	GetSmsCD "sss/GetSmscd/proto/GetSmscd"
@@ -1006,6 +1007,69 @@ func PostHousesImage(w http.ResponseWriter, r *http.Request, ps httprouter.Param
 	// 设置返回数据的格式
 	w.Header().Set("Content-Type", "application/json")
 	// encode and write the response as json 回发数据
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+}
+
+// GetHouseInfo 获取房源详细信息
+func GetHouseInfo(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+
+	fmt.Println("GetHouseInfo 获取房源详细信息 /api/v1.0/houses/:id ")
+
+	server := grpc.NewService()
+	server.Init()
+
+	// call the backend service
+	GetHouseInfoClient := GETHouseInfo.NewGetHouseInfoService("go.micro.srv.GetHouseInfo", server.Client())
+
+	// 获取房屋id
+	Id := ps.ByName("id")
+
+	// 获取cookie
+	cookie, err := r.Cookie("userlogin")
+	if err != nil || cookie.Value == "" {
+		// we want to augment the response 准备回传数据
+		response := map[string]interface{}{
+			"errno":  utils.RECODE_DATAERR,
+			"errmsg": utils.RecodeText(utils.RECODE_DATAERR),
+		}
+		// 设置返回数据的格式
+		w.Header().Set("Content-Type", "application/json")
+		// encode and write the response as json 发送给前端
+		if err := json.NewEncoder(w).Encode(response); err != nil {
+			http.Error(w, err.Error(), 500)
+			return
+		}
+		return
+	}
+
+	rsp, err := GetHouseInfoClient.GetHouseInfo(context.TODO(), &GETHouseInfo.Request{
+		SessionId: cookie.Value,
+		Id:        Id,
+	})
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+
+	house := models.House{}
+	json.Unmarshal(rsp.HouseData, &house)
+
+	dataMap := make(map[string]interface{})
+	dataMap["user_id"] = int(rsp.UserId)
+	dataMap["house"] = house.To_one_house_desc()
+
+	// we want to augment the response
+	response := map[string]interface{}{
+		"errno":  rsp.Errno,
+		"errmsg": rsp.Errmsg,
+		"data":   dataMap,
+	}
+	// 设置返回数据的格式
+	w.Header().Set("Content-Type", "application/json")
+	// encode and write the response as json
 	if err := json.NewEncoder(w).Encode(response); err != nil {
 		http.Error(w, err.Error(), 500)
 		return
