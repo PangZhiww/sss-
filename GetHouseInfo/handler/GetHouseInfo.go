@@ -31,6 +31,9 @@ func (e *GetHouseInfo) GetHouseInfo(ctx context.Context, req *GETHouseInfo.Reque
 	rsp.Errno = utils.RECODE_OK
 	rsp.Errmsg = utils.RecodeText(rsp.Errno)
 
+	/*获取sessionId*/
+	sessionId := req.SessionId
+
 	/*从session中获取我们的user_id的字段 得到当前用户Id*/
 	/*通过session 获取我们当前登陆用户的user_id*/
 	/*构建连接缓存的数据*/
@@ -58,7 +61,7 @@ func (e *GetHouseInfo) GetHouseInfo(ctx context.Context, req *GETHouseInfo.Reque
 	}
 
 	/*拼接key*/
-	sessionIdUserId := req.SessionId + "user_id"
+	sessionIdUserId := sessionId + "user_id"
 
 	valueId := bm.Get(sessionIdUserId)
 	fmt.Println("valueId: ", valueId, reflect.TypeOf(valueId))
@@ -67,6 +70,7 @@ func (e *GetHouseInfo) GetHouseInfo(ctx context.Context, req *GETHouseInfo.Reque
 
 	/*从请求中的url获取房源Id*/
 	houseId, _ := strconv.Atoi(req.Id)
+	fmt.Println("houseId:", houseId)
 
 	/*从缓存数据库中获取到当前房屋的数据*/
 	houseInfoKey := fmt.Sprintf("house_info_%s", houseId)
