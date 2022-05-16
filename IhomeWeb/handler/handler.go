@@ -16,6 +16,7 @@ import (
 	DELETESession "sss/DeleteSession/proto/DeleteSession"
 	GETAREA "sss/GetArea/proto/GetArea"
 	GETHouseInfo "sss/GetHouseInfo/proto/GetHouseInfo"
+	GETHouses "sss/GetHouses/proto/GetHouses"
 	GetImageCD "sss/GetImageCd/proto/GetImageCd"
 	GETIndex "sss/GetIndex/proto/GetIndex"
 	GetSESSION "sss/GetSession/proto/GetSession"
@@ -1096,6 +1097,56 @@ func GetIndex(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 
 	data := []interface{}{}
 	json.Unmarshal(rsp.Max, &data)
+
+	// we want to augment the response
+	response := map[string]interface{}{
+		"errno":  rsp.Errno,
+		"errmsg": rsp.Errmsg,
+		"data":   data,
+	}
+	// 设置返回数据的格式
+	w.Header().Set("Content-Type", "application/json")
+	// encode and write the response as json
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+}
+
+// GetHouses 搜索房源
+func GetHouses(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	fmt.Println("GetHouses 搜索房源 /api/v1.0/houses ")
+
+	server := grpc.NewService()
+	server.Init()
+
+	// call the backend service
+	GetHousesClient := GETHouses.NewGetHousesService("go.micro.srv.GetHouses", server.Client())
+
+	aid := r.URL.Query()["aid"][0]
+	sd := r.URL.Query()["sd"][0]
+	ed := r.URL.Query()["ed"][0]
+	sk := r.URL.Query()["sk"][0]
+	p := r.URL.Query()["p"][0]
+
+	rsp, err := GetHousesClient.GetHouses(context.TODO(), &GETHouses.Request{
+		Aid: aid,
+		Sd:  sd,
+		Ed:  ed,
+		Sk:  sk,
+		P:   p,
+	})
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+
+	houses := []interface{}{}
+	json.Unmarshal(rsp.Houses, &houses)
+	data := map[string]interface{}{}
+	data["current_page"] = rsp.CurrentPage
+	data["houses"] = houses
+	data["total_page"] = rsp.TotalPage
 
 	// we want to augment the response
 	response := map[string]interface{}{
