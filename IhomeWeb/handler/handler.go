@@ -17,6 +17,7 @@ import (
 	GETAREA "sss/GetArea/proto/GetArea"
 	GETHouseInfo "sss/GetHouseInfo/proto/GetHouseInfo"
 	GetImageCD "sss/GetImageCd/proto/GetImageCd"
+	GETIndex "sss/GetIndex/proto/GetIndex"
 	GetSESSION "sss/GetSession/proto/GetSession"
 	GetSmsCD "sss/GetSmscd/proto/GetSmscd"
 	GETUserHouses "sss/GetUserHouses/proto/GetUserHouses"
@@ -1078,17 +1079,32 @@ func GetHouseInfo(w http.ResponseWriter, r *http.Request, ps httprouter.Params) 
 
 // GetIndex 获取首页轮播图信息
 func GetIndex(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+
 	beego.Info("获取首页轮播图信息 GetIndex api/v1.0/house/index")
+
+	server := grpc.NewService()
+	server.Init()
+
+	// call the backend service
+	GetIndexClient := GETIndex.NewGetIndexService("go.micro.srv.GetIndex", server.Client())
+	rsp, err := GetIndexClient.GetIndex(context.TODO(), &GETIndex.Request{})
+	if err != nil {
+		fmt.Println("err:", err)
+		http.Error(w, err.Error(), 500)
+		return
+	}
+
+	data := []interface{}{}
+	json.Unmarshal(rsp.Max, &data)
 
 	// we want to augment the response
 	response := map[string]interface{}{
-		"errno":  utils.RECODE_OK,
-		"errmsg": utils.RecodeText(utils.RECODE_OK),
+		"errno":  rsp.Errno,
+		"errmsg": rsp.Errmsg,
+		"data":   data,
 	}
-
-	// 回传数据的时候是直接发送过去的 并没有设置数据格式 所以需要设置
+	// 设置返回数据的格式
 	w.Header().Set("Content-Type", "application/json")
-
 	// encode and write the response as json
 	if err := json.NewEncoder(w).Encode(response); err != nil {
 		http.Error(w, err.Error(), 500)

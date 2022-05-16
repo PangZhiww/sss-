@@ -28,8 +28,6 @@ func main() {
 
 	// 获取地区请求
 	rou.GET("/api/v1.0/areas", handler.GetArea)
-	// 获取首页轮播图
-	rou.GET("/api/v1.0/house/index", handler.GetIndex)
 	// 获取验证码图片
 	rou.GET("/api/v1.0/imagecode/:uuid", handler.GetImageCd)
 	// 获取短信验证码
@@ -58,6 +56,8 @@ func main() {
 	rou.POST("/api/v1.0/houses/:id/images", handler.PostHousesImage)
 	// 获取房源详细信息
 	rou.GET("/api/v1.0/houses/:id", handler.GetHouseInfo)
+	// 获取首页轮播图
+	rou.GET("/api/v1.0/house/index", handler.GetIndex)
 
 	// register html handler 映射前端页面
 	//service.Handle("/", http.FileServer(http.Dir("html")))

@@ -2,16 +2,15 @@ package main
 
 import (
 	"github.com/micro/go-micro"
+	"github.com/micro/go-micro/service/grpc"
 	"github.com/micro/go-micro/util/log"
 	"sss/GetIndex/handler"
-	"sss/GetIndex/subscriber"
-
-	GetIndex "sss/GetIndex/proto/GetIndex"
+	GETIndex "sss/GetIndex/proto/GetIndex"
 )
 
 func main() {
 	// New Service
-	service := micro.NewService(
+	service := grpc.NewService(
 		micro.Name("go.micro.srv.GetIndex"),
 		micro.Version("latest"),
 	)
@@ -20,13 +19,7 @@ func main() {
 	service.Init()
 
 	// Register Handler
-	GetIndex.RegisterGetIndexHandler(service.Server(), new(handler.GetIndex))
-
-	// Register Struct as Subscriber
-	micro.RegisterSubscriber("go.micro.srv.GetIndex", service.Server(), new(subscriber.GetIndex))
-
-	// Register Function as Subscriber
-	micro.RegisterSubscriber("go.micro.srv.GetIndex", service.Server(), subscriber.Handler)
+	GETIndex.RegisterGetIndexHandler(service.Server(), new(handler.GetIndex))
 
 	// Run service
 	if err := service.Run(); err != nil {
